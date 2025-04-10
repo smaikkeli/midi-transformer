@@ -194,12 +194,11 @@ def train():
     with open(config_copy_path, 'w') as f:
         json.dump(config, f, indent=2)
     logger.info(f"Config saved to {config_copy_path}")
-    """
-        device = torch.device("cuda" if torch.cuda.is_available() else 
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else 
                             "mps" if torch.backends.mps.is_available() else 
-                            "cpu"
-    """
-    device = torch.device("cpu")
+                            "cpu")
+    
     logger.info(f"Using device: {device}")
     
     # Load the tokenizer
