@@ -1,0 +1,13 @@
+
+{
+    "pitch_range": [21, 109],
+    "beat_res": {"0_4": 16},
+    "nb_velocities": 16,
+    "use_chords": true,
+    "use_tempos": true,
+    "additional_tokens": null,
+    "pad": true,
+    "sos_eos": true,
+    "mask": true,
+    "sep": true
+  }

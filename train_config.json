@@ -1,0 +1,30 @@
+
+{
+  "paths": {
+    "output_dir": "checkpoint/transformer_xl",
+    "log_dir": "logs"
+  },
+  "training": {
+    "num_epochs": 10,
+    "learning_rate": 5e-5,
+    "weight_decay": 0.01,
+    "save_every_n_epochs": 1,
+    "seed": 42
+  },
+  "model_name" :"transformer_xl",
+  "model_params": {
+    "d_embed": 256,
+    "d_model": 512,
+    "n_layer": 8,
+    "n_head": 6,
+    "mem_len": 256,
+    "clamp_len": 0,
+    "adaptive": false
+  },
+  "dataset": {
+    "train_ratio": 0.9,
+    "val_ratio": 0.1,
+    "test_ratio": 0.0,
+    "batch_size": 4
+  }
+}
