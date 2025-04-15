@@ -1,13 +1,27 @@
-
 {
-    "pitch_range": [21, 109],
-    "beat_res": {"0_4": 16},
-    "nb_velocities": 16,
-    "use_chords": true,
-    "use_tempos": true,
-    "additional_tokens": null,
-    "pad": true,
-    "sos_eos": true,
-    "mask": true,
-    "sep": true
+  "DATA_DIR": "data",
+  "TOKENIZED_DIR": "data/tokenized",
+  "MAX_SEQ_LEN": 1024,
+  "VOCAB_SIZE": 40000,
+  "TOKENIZER_CONFIG": {
+      "pitch_range": [21, 109],
+      "beat_res": {"0": 16},
+      "num_velocities": 16,
+      "use_chords": true,
+      "use_tempos": true
+  },
+  "DATASETS": {
+      "maestro": {
+          "url": "https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0-midi.zip",
+          "file_type": "zip",
+          "download_path": "data/maestro-v.3.0.0.zip",
+          "extract_path": "data/maestro"
+      },
+      "lakh": {
+          "url": "http://hog.ee.columbia.edu/craffel/lmd/lmd_full.tar.gz",
+          "file_type": "tar.gz",
+          "download_path": "data/lmd_full.tar.gz",
+          "extract_path": "data/lakh"
+      }
   }
+}

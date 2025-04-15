@@ -14,13 +14,25 @@ def create_model(tokenizer, model_name, model_params):
     Returns:
         model: The created model instance
     """
+    config = {
+        "vocab_size": tokenizer.vocab_size,
+        "eos_token_id": tokenizer["EOS_None"],
+    }
+    #add the model_params to config
+    if model_params is not None:
+        config.update(model_params)
+    else:
+        print("No model parameters provided, exiting")
+        raise ValueError("No model parameters provided")
+
+    
     if model_name == "transformer_xl":
-        return create_transformer_xl_model(tokenizer, config_override = model_params)
+        return create_transformer_xl_model(config)
     else:
         raise ValueError(f"Model {model_name} is not supported.")
 
 
-def create_transformer_xl_model(tokenizer, config_override=None):
+def create_transformer_xl_model(config=None):
     """
     Create a Transformer-XL model for music generation
     
@@ -31,27 +43,6 @@ def create_transformer_xl_model(tokenizer, config_override=None):
     Returns:
         Configured TransfoXLLMHeadModel instance
     """
-    # Default configuration
-    model_config = {
-        "vocab_size": tokenizer.vocab_size,
-        "d_embed": 256,
-        "d_model": 512,
-        "n_layer": 8,
-        "n_head": 6,
-        "mem_len": 256,
-        "clamp_len": 0,
-        "cutoffs": [],
-        "adaptive": False,
-        "eos_token_id": tokenizer["EOS_None"]
-    }
-    
-    # Override with any provided configs
-    if config_override is not None:
-        model_config.update(config_override)
-    
-    # Create the configuration
-    config = TransfoXLConfig(**model_config)
-
     print(config.eos_token_id)
     print(config.cutoffs)
     
