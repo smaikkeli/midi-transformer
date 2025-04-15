@@ -176,8 +176,8 @@ def run_training_loop(
 # Set paths and device
 def train():
     # Set paths and device
-    config = open_json("train_config.json")
-    paths = config["paths"]
+    train_config = open_json("train_config.json")
+    paths = train_config["paths"]
     output_dir = Path(paths["output_dir"])
     log_dir = Path(paths["log_dir"])
 
@@ -186,45 +186,52 @@ def train():
 
     logger = setup_logging(log_dir)
     logger.info("Training started")
-    logger.info(f"Config loaded: {config}")
+    logger.info(f"Config loaded: {train_config}")
 
     # Save config copy with timestamp for reference
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     config_copy_path = output_dir / f"config_{timestamp}.json"
     with open(config_copy_path, 'w') as f:
-        json.dump(config, f, indent=2)
+        json.dump(train_config, f, indent=2)
     logger.info(f"Config saved to {config_copy_path}")
-    
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else 
-                            "mps" if torch.backends.mps.is_available() else 
-                            "cpu")
+                        "mps" if torch.backends.mps.is_available() else 
+                        "cpu")
+    """
+    device = torch.device("cpu")
     
     logger.info(f"Using device: {device}")
     
     # Load the tokenizer
     logger.info("Loading tokenizer...")
-    tokenizer = TokenizerManager.load_tokenizer()
+
+    tokenizer = TokenizerManager.load_tokenizer(config_path = "./token_config.json")
     
     # Load the dataset
     logger.info("Loading dataset...")
     dataset = DatasetPreprocessor.load_tokenized_dataset(tokenizer = tokenizer)
     
-    dataset_params = config.get("dataset", {})
+    dataset_params = train_config.get("dataset", {})
     train_ratio = dataset_params.get("train_ratio", 0.9)
     val_ratio = dataset_params.get("val_ratio", 0.1)
     test_ratio = dataset_params.get("test_ratio", 0.0)
     batch_size = dataset_params.get("batch_size", 4)
-
+    
     # Split into train/validation sets
     train_loader, val_loader, _ = DatasetPreprocessor.create_data_loaders(
-        tokenizer, dataset, batch_size=batch_size, train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio
+        dataset, tokenizer, batch_size=batch_size, train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio
     )
+
+    for i, data in enumerate(train_loader):
+        print(data)
+        break
     
     logger.info(f"Dataset loaded: {len(train_loader)} training batches, {len(val_loader)} validation batches")
     
     # Create the model (you can easily swap this with another model in the future)
-    model_name = config["model_name"]
-    model_params = config["model_params"]
+    model_name = train_config["model_name"]
+    model_params = train_config["model_params"]
 
     model = create_model(tokenizer, model_name, model_params)
    
@@ -233,7 +240,7 @@ def train():
     
     #Training loop fuckit
     logger.info("Starting training...")
-    training_params = config["training"]
+    training_params = train_config["training"]
 
     training_params.update({
         "train_loader": train_loader,

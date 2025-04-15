@@ -19,7 +19,8 @@
     "n_head": 6,
     "mem_len": 256,
     "clamp_len": 0,
-    "adaptive": false
+    "adaptive": false,
+    "cutoffs": "[]"
   },
   "dataset": {
     "train_ratio": 0.9,

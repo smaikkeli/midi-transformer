@@ -18,6 +18,7 @@ def create_model(tokenizer, model_name, model_params):
         "vocab_size": tokenizer.vocab_size,
         "eos_token_id": tokenizer["EOS_None"],
     }
+
     #add the model_params to config
     if model_params is not None:
         config.update(model_params)
@@ -32,7 +33,7 @@ def create_model(tokenizer, model_name, model_params):
         raise ValueError(f"Model {model_name} is not supported.")
 
 
-def create_transformer_xl_model(config=None):
+def create_transformer_xl_model(train_config):
     """
     Create a Transformer-XL model for music generation
     
@@ -43,8 +44,12 @@ def create_transformer_xl_model(config=None):
     Returns:
         Configured TransfoXLLMHeadModel instance
     """
-    print(config.eos_token_id)
-    print(config.cutoffs)
-    
+
+    if train_config["cutoffs"] == "[]":
+        train_config["cutoffs"] = []
+    trans_config = TransfoXLConfig(**train_config)
+
+
+    print(trans_config)
     # Create and return the model
-    return TransfoXLLMHeadModel(config)
+    return TransfoXLLMHeadModel(trans_config)
