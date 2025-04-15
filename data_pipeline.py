@@ -291,25 +291,29 @@ class Pipeline:
 def main():
     argparser = argparse.ArgumentParser(description="MIDI Dataset Preparation Pipeline")
 
-    #Only download and extract files that are in the config
-    argparser.add_argument('--datasets', type=str, nargs='+', help="List of datasets to download")
-    argparser.add_argument('--lakh_limit', type=int, default=None, help="Limit for Lakh dataset")
-
-    #Tokenize and chunk the dataset
-    argparser.add_argument('--tokenize', action='store_true', help="Tokenize and chunk the dataset")
+    # Argument to control dataset download
+    argparser.add_argument('--download', action='store_true', help="Download all datasets specified in the config file.")
+    
+    # Tokenize and chunk the dataset (optional flag)
+    argparser.add_argument('--tokenize', action='store_true', help="Tokenize and chunk the dataset after download.")
 
     args = argparser.parse_args()
-    datasets = args.datasets if args.datasets else None
-    lakh_limit = args.lakh_limit if args.lakh_limit else None
-    tokenize = args.tokenize
 
-    #Run
-    Pipeline.setup_environment
-    if datasets:
-        Pipeline.prepare_datasets(datasets, lakh_limit=lakh_limit)
-    if tokenize:
-        Pipeline.prepare_tokenized_data(lakh_limit=lakh_limit)
+    # Download datasets if --download is provided
+    if args.download:
+        # Automatically use all datasets from the config
+        Pipeline.prepare_datasets(cleanup=True)
+        print("All datasets have been downloaded and extracted.")
+
+    # Tokenize datasets if --tokenize is provided
+    if args.tokenize:
+        Pipeline.prepare_tokenized_data(lakh_limit=None)
         print(f"Tokenizer created and saved to {Config.TOKENIZER_PATH}")
+
+    # Handle case where neither argument is provided
+    if not args.download and not args.tokenize:
+        print("No action specified. Use --download to download datasets or --tokenize to tokenize them.")
+
 
 
 # Example usage
