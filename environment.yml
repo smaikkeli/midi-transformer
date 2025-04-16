@@ -1,15 +1,18 @@
 name: midi-transformer
 channels:
   - conda-forge
+  - nvidia
 dependencies:
   - python=3.10
   - pytorch
+  - pytorch-cuda
   - torchvision
   - transformers
   - ipykernel
   - pandas
   - numpy
   - tqdm
+  - pip
   - pip:
     - miditok
 
