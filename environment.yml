@@ -1,0 +1,16 @@
+name: midi-transformer
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pytorch
+  - torchvision
+  - transformers
+  - ipykernel
+  - pandas
+  - numpy
+  - tqdm
+  - pip:
+    - miditok
+
+prefix: /Users/mikaelhokkanen/anaconda3/envs/midi-transformer

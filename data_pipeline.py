@@ -13,50 +13,53 @@ from miditok.utils import split_files_for_training
 
 from miditok.pytorch_data import DatasetMIDI, DataCollator
 from torch.utils.data import DataLoader, random_split
-from typing import List, Tuple, Optional, Dict
+from dataclasses import dataclass, field
+from typing import List, Tuple, Optional, Dict, Any
 
+@dataclass
+class TokenizerConfig:
+    beat_res: Dict[Tuple[int, int], int]
+    additional_params: Dict[str, Any] = field(default_factory=dict)
 
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> "TokenizerConfig":
+        beat_res_raw = data.pop("beat_res", {})
+        beat_res = {
+            tuple(map(int, k.split("_"))): v
+            for k, v in beat_res_raw.items()
+        }
+        return TokenizerConfig(beat_res=beat_res, additional_params=data)
+
+@dataclass
 class Config:
-    """Configuration manager for the MIDI tokenization pipeline."""
-    
-    config = {}  # Default empty config
-    
-    @classmethod
-    def load_config(cls, config_path):
-        """Load configuration from a JSON file."""
+    data_dir: Path
+    tokenized_dir: Path
+    max_seq_len: int
+    vocab_size: int
+    tokenizer_config: TokenizerConfig
+    datasets: Any  # You can make this more specific depending on structure
+
+    @property
+    def tokenizer_path(self) -> Path:
+        return self.data_dir / "combined_tokenizer.json"
+
+    @staticmethod
+    def load_from_file(config_path: Path) -> "Config":
         with open(config_path, 'r') as f:
-            config_data = json.load(f)
+            raw = json.load(f)
 
-        # Parse 'beat_res' to convert the string keys to tuples
-        if "TOKENIZER_CONFIG" in config_data and "beat_res" in config_data["TOKENIZER_CONFIG"]:
-            beat_res = config_data["TOKENIZER_CONFIG"]["beat_res"]
-            parsed_beat_res = {}
-            for key, value in beat_res.items():
-                # Convert string key like "0_4" to a tuple (0, 4)
-                beat_range = tuple(map(int, key.split('_')))
-                parsed_beat_res[beat_range] = value
-            
-            config_data["TOKENIZER_CONFIG"]["beat_res"] = parsed_beat_res
-        
-        cls.config = config_data
-        
-        # Set class attributes from config
-        cls.DATA_DIR = Path(config_data["DATA_DIR"])
-        cls.TOKENIZED_DIR = Path(config_data["TOKENIZED_DIR"])
-        cls.MAX_SEQ_LEN = config_data["MAX_SEQ_LEN"]
-        cls.VOCAB_SIZE = config_data["VOCAB_SIZE"]
-        cls.TOKENIZER_CONFIG = TokenizerConfig(**config_data["TOKENIZER_CONFIG"])
-        cls.TOKENIZER_PATH = cls.DATA_DIR / "combined_tokenizer.json"
-        cls.DATASETS = config_data["DATASETS"]
-        
-        return cls.config
+        return Config(
+            data_dir=Path(raw["DATA_DIR"]),
+            tokenized_dir=Path(raw["TOKENIZED_DIR"]),
+            max_seq_len=raw["MAX_SEQ_LEN"],
+            vocab_size=raw["VOCAB_SIZE"],
+            tokenizer_config=TokenizerConfig.from_dict(raw["TOKENIZER_CONFIG"]),
+            datasets=raw["DATASETS"]
+        )
 
-    @classmethod
-    def create_directories(cls):
-        """Create necessary directories for data processing."""
-        cls.DATA_DIR.mkdir(exist_ok=True)
-        cls.TOKENIZED_DIR.mkdir(exist_ok=True)
-
+    def create_directories(self):
+        self.data_dir.mkdir(exist_ok=True)
+        self.tokenized_dir.mkdir(exist_ok=True)
 
 class DatasetManager:
     """Manages downloading and extraction of datasets."""
@@ -153,79 +156,82 @@ class MIDIProcessor:
 
 class TokenizerManager:
     """Manages MIDI tokenization."""
-    
-    @staticmethod
-    def create_tokenizer() -> REMI:
-        return REMI(tokenizer_config=Config.TOKENIZER_CONFIG)
-    
-    @staticmethod
-    def load_tokenizer(config_path: str) -> REMI:
-        #Load the data_config, not the tokenizer itself
-        Config.load_config(config_path)
 
-        if not Config.TOKENIZER_PATH.exists():
-            raise FileNotFoundError(f"Tokenizer not found at {Config.TOKENIZER_PATH}")
-        
-        return REMI(params=Config.TOKENIZER_PATH)
-    
+    def __init__(self, config: Config):
+        self.config = config
+
     @classmethod
-    def get_or_create_tokenizer(cls, midi_paths: List[Path]) -> REMI:
-        if Config.TOKENIZER_PATH.exists():
-            print(f"Loading existing tokenizer from {Config.TOKENIZER_PATH}")
-            return cls.load_tokenizer()
-        
-        print("Creating and training new tokenizer...")
-        tokenizer = cls.create_tokenizer()
-        tokenizer.train(vocab_size=Config.VOCAB_SIZE, files_paths=midi_paths)
-        
-        tokenizer.save(Config.TOKENIZER_PATH)
-        print(f"Tokenizer saved to {Config.TOKENIZER_PATH}")
-        
-        return tokenizer
+    def from_config_path(cls, path: Path) -> "TokenizerManager":
+        config = Config.load_from_file(path)
+        return cls(config)
 
+    def create_tokenizer(self) -> REMI:
+        return REMI(tokenizer_config=self.config.tokenizer_config)
+
+    def load_tokenizer(self) -> REMI:
+        if not self.config.tokenizer_path.exists():
+            raise FileNotFoundError(f"Tokenizer not found at {self.config.tokenizer_path}")
+        
+        return REMI(params=self.config.tokenizer_path)
+
+    def get_or_create_tokenizer(self, midi_paths: List[Path]) -> REMI:
+        if self.config.tokenizer_path.exists():
+            print(f"Loading existing tokenizer from {self.config.tokenizer_path}")
+            return self.load_tokenizer()
+
+        print("Creating and training new tokenizer...")
+        tokenizer = self.create_tokenizer()
+        tokenizer.train(vocab_size=self.config.vocab_size, files_paths=midi_paths)
+        
+        tokenizer.save(self.config.tokenizer_path)
+        print(f"Tokenizer saved to {self.config.tokenizer_path}")
+
+        return tokenizer
 
 class DatasetPreprocessor:
     """Prepare datasets for training."""
-    
-    @staticmethod
-    def tokenize_and_chunk_dataset(midi_paths: List[Path], tokenizer: REMI) -> None:
-        if Config.TOKENIZED_DIR.exists() and list(Config.TOKENIZED_DIR.glob("**/*.midi")):
-            print(f"Tokenized chunks already exist in {Config.TOKENIZED_DIR}")
+
+    def __init__(self, config: Config):
+        self.config = config
+
+    def tokenize_and_chunk_dataset(self, midi_paths: List[Path], tokenizer: REMI) -> None:
+        if self.config.tokenized_dir.exists() and list(self.config.tokenized_dir.glob("**/*.midi")):
+            print(f"Tokenized chunks already exist in {self.config.tokenized_dir}")
             return
         
         print(f"Tokenizing and splitting {len(midi_paths)} files into chunks...")
         split_files_for_training(
             files_paths=midi_paths,
             tokenizer=tokenizer,
-            save_dir=Config.TOKENIZED_DIR,
-            max_seq_len=Config.MAX_SEQ_LEN,
+            save_dir=self.config.tokenized_dir,
+            max_seq_len=self.config.max_seq_len,
         )
-        print(f"Tokenization complete. Files saved to {Config.TOKENIZED_DIR}")
+        print(f"Tokenization complete. Files saved to {self.config.tokenized_dir}")
 
-    @staticmethod
-    def load_tokenized_dataset(tokenizer: REMI) -> DatasetMIDI:
-        files = list(Config.TOKENIZED_DIR.glob("**/*.midi"))
+    def load_tokenized_dataset(self, tokenizer: REMI) -> DatasetMIDI:
+        files = list(self.config.tokenized_dir.glob("**/*.midi"))
         print(f"Loading {len(files)} MIDI chunks...")
         
         dataset = DatasetMIDI(
             files_paths=files,
             tokenizer=tokenizer,
-            max_seq_len=Config.MAX_SEQ_LEN,
+            max_seq_len=self.config.max_seq_len,
             bos_token_id=tokenizer["BOS_None"],
             eos_token_id=tokenizer["EOS_None"],
         )
         
         return dataset
 
-    @staticmethod
-    def create_data_loaders(dataset: DatasetMIDI,
-                            tokenizer: REMI, 
-                            batch_size: int = 1,
-                            train_ratio: float = 0.8,
-                            val_ratio: float = 0.1,
-                            test_ratio: float = 0.1,
-                            ) -> Tuple[DataLoader, DataLoader, DataLoader]:
-        
+    def create_data_loaders(
+        self,
+        dataset: DatasetMIDI,
+        tokenizer: REMI,
+        batch_size: int = 1,
+        train_ratio: float = 0.8,
+        val_ratio: float = 0.1,
+        test_ratio: float = 0.1,
+    ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+
         total_size = len(dataset)
         train_size = int(total_size * train_ratio)
         val_size = int(total_size * val_ratio)
@@ -234,10 +240,10 @@ class DatasetPreprocessor:
         train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
 
         collator = DataCollator(
-                pad_token_id=tokenizer.pad_token_id,
-                copy_inputs_as_labels=True,
-                shift_labels=False
-            )
+            pad_token_id=tokenizer.pad_token_id,
+            copy_inputs_as_labels=True,
+            shift_labels=False
+        )
 
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collator)
         val_loader = DataLoader(val_dataset, batch_size=batch_size, collate_fn=collator)

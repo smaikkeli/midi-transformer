@@ -7,7 +7,7 @@ import os
 import logging
 from datetime import datetime
 
-from data_pipeline import TokenizerManager, DatasetPreprocessor
+from data_pipeline import Config, TokenizerManager, DatasetPreprocessor
 from model import create_model
 
 def setup_logging(log_dir):
@@ -92,14 +92,15 @@ def run_training_loop(
             # Forward pass
             outputs = model(inputs, labels=labels)
             loss = outputs.loss
+
+            # Update tracking
+            total_loss += loss.item()
+            total_steps += 1
             
             # Backward pass
             loss.backward()
             optimizer.step()
             
-            # Update tracking
-            total_loss += loss.item()
-            total_steps += 1
             
             # Update progress bar
             train_iter.set_postfix({"loss": loss.item()})
@@ -177,23 +178,16 @@ def run_training_loop(
 def train():
     # Set paths and device
     train_config = open_json("train_config.json")
+
     paths = train_config["paths"]
     output_dir = Path(paths["output_dir"])
     log_dir = Path(paths["log_dir"])
 
-    #Output and log dir into path objects
     output_dir.mkdir(parents=True, exist_ok=True)
-
     logger = setup_logging(log_dir)
     logger.info("Training started")
     logger.info(f"Config loaded: {train_config}")
 
-    # Save config copy with timestamp for reference
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    config_copy_path = output_dir / f"config_{timestamp}.json"
-    with open(config_copy_path, 'w') as f:
-        json.dump(train_config, f, indent=2)
-    logger.info(f"Config saved to {config_copy_path}")
     """
     device = torch.device("cuda" if torch.cuda.is_available() else 
                         "mps" if torch.backends.mps.is_available() else 
@@ -206,11 +200,16 @@ def train():
     # Load the tokenizer
     logger.info("Loading tokenizer...")
 
-    tokenizer = TokenizerManager.load_tokenizer(config_path = "./token_config.json")
+    #Bad code here, it is confusing that the data preprocessing config needs to be passed
+    data_config = Config.load_from_file(Path("./data_config.json"))
+    data_config.create_directories()
+    token_manager = TokenizerManager(config=data_config)
+    tokenizer = token_manager.load_tokenizer()
     
     # Load the dataset
     logger.info("Loading dataset...")
-    dataset = DatasetPreprocessor.load_tokenized_dataset(tokenizer = tokenizer)
+    datasetpreprocessor = DatasetPreprocessor(config=data_config)
+    dataset = datasetpreprocessor.load_tokenized_dataset(tokenizer = tokenizer)
     
     dataset_params = train_config.get("dataset", {})
     train_ratio = dataset_params.get("train_ratio", 0.9)
@@ -219,13 +218,9 @@ def train():
     batch_size = dataset_params.get("batch_size", 4)
     
     # Split into train/validation sets
-    train_loader, val_loader, _ = DatasetPreprocessor.create_data_loaders(
-        dataset, tokenizer, batch_size=batch_size, train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio
+    train_loader, val_loader, _ = datasetpreprocessor.create_data_loaders(
+        dataset = dataset, tokenizer = tokenizer, batch_size=batch_size, train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio
     )
-
-    for i, data in enumerate(train_loader):
-        print(data)
-        break
     
     logger.info(f"Dataset loaded: {len(train_loader)} training batches, {len(val_loader)} validation batches")
     
