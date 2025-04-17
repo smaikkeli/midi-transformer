@@ -50,6 +50,6 @@ def create_transformer_xl_model(train_config):
     trans_config = TransfoXLConfig(**train_config)
 
 
-    print(trans_config)
+    #print(trans_config)
     # Create and return the model
     return TransfoXLLMHeadModel(trans_config)

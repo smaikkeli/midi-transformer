@@ -188,21 +188,20 @@ def train():
     logger.info("Training started")
     logger.info(f"Config loaded: {train_config}")
 
-    """
+
     device = torch.device("cuda" if torch.cuda.is_available() else 
                         "mps" if torch.backends.mps.is_available() else 
                         "cpu")
-    """
-    device = torch.device("cpu")
+    
+    #device = torch.device("cpu")
     
     logger.info(f"Using device: {device}")
     
     # Load the tokenizer
     logger.info("Loading tokenizer...")
 
-    #Bad code here, it is confusing that the data preprocessing config needs to be passed
+    #Load the tokenizer from the config file
     data_config = Config.load_from_file(Path("./data_config.json"))
-    data_config.create_directories()
     token_manager = TokenizerManager(config=data_config)
     tokenizer = token_manager.load_tokenizer()
     
