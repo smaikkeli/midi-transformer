@@ -14,6 +14,7 @@ class DatasetPreprocessor:
     def __init__(self, config: Config):
         self.tokenized_dir = config.tokenized_dir
         self.max_seq_len = config.max_seq_len
+        self.min_seq_len = config.min_seq_len
         self.vocab_size = config.vocab_size
 
 
@@ -28,6 +29,7 @@ class DatasetPreprocessor:
             tokenizer=tokenizer,
             save_dir=self.tokenized_dir,
             max_seq_len=self.max_seq_len,
+            min_seq_len=self.min_seq_len
         )
         print(f"Tokenization complete. Files saved to {self.tokenized_dir}")
 

@@ -1,7 +1,8 @@
 {
     "DATA_DIR": "data",
     "TOKENIZED_DIR": "data/tokenized",
-    "MAX_SEQ_LEN": 1024,
+    "MAX_SEQ_LEN": 2048,
+    "MIN_SEQ_LEN": 32,
     "VOCAB_SIZE": 40000,
     "TOKENIZER_CONFIG": {
         "pitch_range": [21, 109],

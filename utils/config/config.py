@@ -10,6 +10,7 @@ class Config:
     data_dir: Path
     tokenized_dir: Path
     max_seq_len: int
+    min_seq_len: int
     vocab_size: int
     tokenizer_config: Dict
     datasets: Dict  # You can make this more specific depending on structure
@@ -27,6 +28,7 @@ class Config:
             data_dir=Path(raw["DATA_DIR"]),
             tokenized_dir=Path(raw["TOKENIZED_DIR"]),
             max_seq_len=raw["MAX_SEQ_LEN"],
+            min_seq_len=raw["MIN_SEQ_LEN"],
             vocab_size=raw["VOCAB_SIZE"],
             tokenizer_config=raw["TOKENIZER_CONFIG"],
             datasets=raw["DATASETS"]

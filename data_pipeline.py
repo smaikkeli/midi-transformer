@@ -27,9 +27,11 @@ class Pipeline:
             for dataset_name in datasets:
                 self.dataset_manager.get_dataset(dataset_name, cleanup=cleanup)
     
-    def prepare_tokenized_data(self, lakh_limit=2000):
+    def prepare_tokenized_data(self, lakh_limit=None):
         """Prepare tokenized data from all datasets."""
         midi_paths = self.midi_processor.get_all_midi_paths(lakh_limit=lakh_limit)
+
+        print(f"Found {len(midi_paths)} MIDI files across all datasets")
         
         tokenizer = self.tokenizer_manager.get_or_create_tokenizer(midi_paths)
         

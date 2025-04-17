@@ -33,6 +33,4 @@ class MIDIProcessor:
             paths.extend(self.get_lakh_midi_paths(limit=lakh_limit))
         except Exception as e:
             print(f"Error getting Lakh paths: {e}")
-        
-        print(f"Found {len(paths)} MIDI files across all datasets")
         return paths
