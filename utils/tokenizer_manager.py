@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List
 from miditok import REMI
+from miditok import TokenizerConfig
 from utils.config.config import Config
 
 class TokenizerManager:
@@ -15,7 +16,17 @@ class TokenizerManager:
         return cls(config)
 
     def create_tokenizer(self) -> REMI:
-        return REMI(tokenizer_config=self.config.tokenizer_config)
+        t_config = self.config.tokenizer_config
+
+        beat_res_raw = t_config.pop("beat_res", {})
+        beat_res = {
+            tuple(map(int, k.split("_"))): v
+            for k, v in beat_res_raw.items()
+        }
+        t_config["beat_res"] = beat_res
+
+        t_config = TokenizerConfig(**t_config)
+        return REMI(tokenizer_config=t_config)
 
     def load_tokenizer(self) -> REMI:
         if not self.config.tokenizer_path.exists():

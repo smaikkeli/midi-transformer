@@ -15,5 +15,3 @@ dependencies:
   - pip
   - pip:
     - miditok
-
-prefix: /Users/mikaelhokkanen/anaconda3/envs/midi-transformer
