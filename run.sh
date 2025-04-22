@@ -10,7 +10,5 @@
 #SBATCH --mail-type=end          # send mail when job ends
 #SBATCH --mail-user=miksuhok@gmail.com
 
-module purge
-module load mamba
-source activate midi-transformer
+./init_env.sh
 python train.py

@@ -8,12 +8,12 @@ from typing import List, Tuple, Optional, Dict, Any
 @dataclass
 class Config:
     data_dir: Path
-    tokenized_dir: Path
+    chunked_dir: Path
     max_seq_len: int
     min_seq_len: int
     vocab_size: int
     tokenizer_config: Dict
-    datasets: Dict  # You can make this more specific depending on structure
+    datasets: Dict
 
     @property
     def tokenizer_path(self) -> Path:
@@ -26,7 +26,7 @@ class Config:
 
         return Config(
             data_dir=Path(raw["DATA_DIR"]),
-            tokenized_dir=Path(raw["TOKENIZED_DIR"]),
+            chunked_dir=Path(raw["CHUNKED_DIR"]),
             max_seq_len=raw["MAX_SEQ_LEN"],
             min_seq_len=raw["MIN_SEQ_LEN"],
             vocab_size=raw["VOCAB_SIZE"],
@@ -36,4 +36,4 @@ class Config:
 
     def create_directories(self):
         self.data_dir.mkdir(exist_ok=True)
-        self.tokenized_dir.mkdir(exist_ok=True)
+        self.chunked_dir.mkdir(exist_ok=True)

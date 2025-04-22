@@ -208,7 +208,7 @@ def train():
     # Load the dataset
     logger.info("Loading dataset...")
     datasetpreprocessor = DatasetPreprocessor(config=data_config)
-    dataset = datasetpreprocessor.load_tokenized_dataset(tokenizer = tokenizer)
+    dataset = datasetpreprocessor.load_chunked_dataset(tokenizer = tokenizer)
     
     dataset_params = train_config.get("dataset", {})
     train_ratio = dataset_params.get("train_ratio", 0.9)
@@ -218,7 +218,7 @@ def train():
     
     # Split into train/validation sets
     train_loader, val_loader, _ = datasetpreprocessor.create_data_loaders(
-        dataset = dataset, tokenizer = tokenizer, batch_size=batch_size, train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio
+        dataset = dataset, tokenizer = tokenizer, batch_size=batch_size, train_ratio=train_ratio, val_ratio=val_ratio
     )
     
     logger.info(f"Dataset loaded: {len(train_loader)} training batches, {len(val_loader)} validation batches")

@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List, Tuple
-from miditok import REMI
+from miditok import MusicTokenizer
 from miditok.utils import split_files_for_training
 from miditok.pytorch_data import DatasetMIDI, DataCollator
 from torch.utils.data import DataLoader, random_split
@@ -12,33 +12,50 @@ class DatasetPreprocessor:
     """Prepare datasets for training."""
 
     def __init__(self, config: Config):
-        self.tokenized_dir = config.tokenized_dir
+        self.chunked_dir = config.chunked_dir
         self.max_seq_len = config.max_seq_len
         self.min_seq_len = config.min_seq_len
         self.vocab_size = config.vocab_size
 
+    def chunk_dataset(self, midi_paths: List[Path], tokenizer: MusicTokenizer) -> None:
+        '''
+        Split MIDI files into chunks
+        Args:
+            midi_paths (List[Path]): List of MIDI file paths to tokenize and chunk.
+            tokenizer : Tokenizer to use for tokenization.
+        '''
 
-    def tokenize_and_chunk_dataset(self, midi_paths: List[Path], tokenizer: REMI) -> None:
-        if self.tokenized_dir.exists() and list(self.tokenized_dir.glob("**/*.midi")):
-            print(f"Tokenized chunks already exist in {self.tokenized_dir}")
+        if (self.chunked_dir.exists()) and (list(self.chunked_dir.rglob("*.mid*"))):
+            print(f"Chunked files already exist in {self.chunked_dir} and length is {len(list(self.chunked_dir.glob('**/*.mid*')))}")
             return
         
-        print(f"Tokenizing and splitting {len(midi_paths)} files into chunks...")
-        split_files_for_training(
+        print(f"Splitting {len(midi_paths)} files into chunks...")
+        chunk_paths = split_files_for_training(
             files_paths=midi_paths,
             tokenizer=tokenizer,
-            save_dir=self.tokenized_dir,
+            save_dir=self.chunked_dir,
             max_seq_len=self.max_seq_len,
             min_seq_len=self.min_seq_len
         )
-        print(f"Tokenization complete. Files saved to {self.tokenized_dir}")
+        print(f"Splitting to chunks completed. Files saved to {self.chunked_dir}")
+        print(f"In total {len(chunk_paths)} chunks created.")
+        return chunk_paths
 
-    def load_tokenized_dataset(self, tokenizer: REMI) -> DatasetMIDI:
-        files = list(self.tokenized_dir.glob("**/*.midi"))
-        print(f"Loading {len(files)} MIDI chunks...")
+    def stream_dataset(self, midi_paths: List[Path], tokenizer: MusicTokenizer) -> None:
+        '''
+        Tokenize MIDI files into a single stream
+        Args:
+            midi_paths (List[Path]): List of MIDI file paths to tokenize.
+            tokenizer : Tokenizer to use for tokenization.
+        '''
+
+
+    def load_chunked_dataset(self, tokenizer: MusicTokenizer) -> DatasetMIDI:
+        chunked_files = list(self.chunked_dir.glob("**/*.midi")) + list(self.chunked_dir.glob("**/*.mid"))
+        print(f"Loading {len(chunked_files)} MIDI chunks...")
         
         dataset = DatasetMIDI(
-            files_paths=files,
+            files_paths=chunked_files,
             tokenizer=tokenizer,
             max_seq_len=self.max_seq_len,
             bos_token_id=tokenizer["BOS_None"],
@@ -50,11 +67,10 @@ class DatasetPreprocessor:
     def create_data_loaders(
         self,
         dataset: DatasetMIDI,
-        tokenizer: REMI,
+        tokenizer: MusicTokenizer,
         batch_size: int = 1,
         train_ratio: float = 0.8,
         val_ratio: float = 0.1,
-        test_ratio: float = 0.1,
     ) -> Tuple[DataLoader, DataLoader, DataLoader]:
 
         total_size = len(dataset)

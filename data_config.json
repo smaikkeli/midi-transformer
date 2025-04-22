@@ -1,6 +1,6 @@
 {
     "DATA_DIR": "data",
-    "TOKENIZED_DIR": "data/tokenized",
+    "CHUNKED_DIR": "data/chunked",
     "MAX_SEQ_LEN": 2048,
     "MIN_SEQ_LEN": 32,
     "VOCAB_SIZE": 40000,

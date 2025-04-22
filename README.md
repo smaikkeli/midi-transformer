@@ -16,6 +16,10 @@ To process the data, run. The following commmand fill download all the files spe
 
 `python data_pipeline.py --download --config data_config.json`
 
+The tokenization is also ran through data_pipeline.py
+
+`python data_pipeline.py --tokenize --config data.json`
+
 To train a model, run
 
 `python train.py`
