@@ -189,9 +189,8 @@ def train():
     logger.info(f"Config loaded: {train_config}")
 
 
-    device = torch.device("cuda" if torch.cuda.is_available() else 
-                        "mps" if torch.backends.mps.is_available() else 
-                        "cpu")
+    device = torch.device("cuda")
+    
     
     #device = torch.device("cpu")
     
@@ -241,7 +240,8 @@ def train():
         "val_loader": val_loader,
         "model": model,
         "device": device,
-        "logger": logger
+        "logger": logger,
+        "output_dir": output_dir
     })
 
     run_training_loop(**training_params)

@@ -43,7 +43,7 @@ class Pipeline:
 def main():
     argparser = argparse.ArgumentParser(description="MIDI Dataset Preparation Pipeline")
     
-    argparser.add_argument('--config', type=str, default="token_config.json", help="Path to configuration file")
+    argparser.add_argument('--config', type=str, default="data_config.json", help="Path to configuration file")
     argparser.add_argument('--download', action='store_true', help="Download all datasets specified in the config file")
     argparser.add_argument('--chunk', action='store_true', help="Chunk the dataset after download")
     argparser.add_argument('--lakh_limit', type=int, default=None, help="Limit the number of Lakh MIDI files to process")

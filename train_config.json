@@ -1,7 +1,7 @@
 
 {
   "paths": {
-    "output_dir": "checkpoint/transformer_xl",
+    "output_dir": "checkpoint/transformer_1500lakh_fullmaestro",
     "log_dir": "logs"
   },
   "training": {

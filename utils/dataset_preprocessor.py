@@ -49,6 +49,8 @@ class DatasetPreprocessor:
             tokenizer : Tokenizer to use for tokenization.
         '''
 
+        
+
 
     def load_chunked_dataset(self, tokenizer: MusicTokenizer) -> DatasetMIDI:
         chunked_files = list(self.chunked_dir.glob("**/*.midi")) + list(self.chunked_dir.glob("**/*.mid"))
@@ -60,6 +62,7 @@ class DatasetPreprocessor:
             max_seq_len=self.max_seq_len,
             bos_token_id=tokenizer["BOS_None"],
             eos_token_id=tokenizer["EOS_None"],
+            pre_tokenize=True
         )
         
         return dataset
@@ -86,8 +89,21 @@ class DatasetPreprocessor:
             shift_labels=False
         )
 
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collator)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size, collate_fn=collator)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, collate_fn=collator)
+        train_loader = DataLoader(train_dataset, 
+                                  batch_size=batch_size, 
+                                  shuffle=True, 
+                                  collate_fn=collator,
+                                  pin_memory=True,
+                                  num_workers=4)
+        val_loader = DataLoader(val_dataset, 
+                                batch_size=batch_size, 
+                                collate_fn=collator,
+                                pin_memory=True,
+                                num_workers=4)
+        test_loader = DataLoader(test_dataset, 
+                                 batch_size=batch_size, 
+                                 collate_fn=collator,
+                                 pin_memory=True,
+                                 num_workers=4)
 
         return train_loader, val_loader, test_loader
