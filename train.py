@@ -203,12 +203,26 @@ def run_training_loop(
 
 # Set paths and device
 def train(to_tmp):
+
+
+    
+
     # Set paths and device
     train_config = open_json("train_config.json")
 
+
+    # searching for the timestamp
+    for folder in Path.cwd().iterdir():
+        if folder.is_dir() and "model_data" in folder.parts[-1]:
+            folder_name = folder.parts[-1]
+            timestamp = folder_name.split("_")[:2]
+            timestamp = timestamp[0]+"_" + timestamp[1] +"_"
+            break
+
+
     paths = train_config["paths"]
-    output_dir = Path(paths["output_dir"])
-    log_dir = Path(paths["log_dir"])
+    output_dir = Path(timestamp +paths["output_dir"])
+    log_dir = Path(timestamp + paths["log_dir"])
 
     output_dir.mkdir(parents=True, exist_ok=True)
     logger = setup_logging(log_dir)
@@ -216,17 +230,24 @@ def train(to_tmp):
     logger.info(f"Config loaded: {train_config}")
 
 
-    device = torch.device("cuda")
+    device = torch.device("cpu")
     logger.info(f"cuda available: {torch.cuda.is_available()}")
     #device = torch.device("cpu")
     
     logger.info(f"Using device: {device}")
-    
+
+
     # Load the tokenizer
     logger.info("Loading tokenizer...")
 
     #Load the tokenizer from the config file
     data_config = Config.load_from_file(Path("./data_config.json"))
+
+
+    parts = data_config.tokenizer_path.parts
+    print(data_config.tokenizer_path)
+    data_config.tokenizer_path = Path(timestamp + parts[0] + "/"+parts[1])
+
     data_path = data_config.chunked_dir
 
     if to_tmp and data_path:
@@ -237,6 +258,8 @@ def train(to_tmp):
 
     token_manager = TokenizerManager(config=data_config)
     tokenizer = token_manager.load_tokenizer()
+
+    
     
     # Load the dataset
     logger.info("Loading dataset...")

@@ -1,6 +1,7 @@
 {
     "DATA_DIR": "data",
     "CHUNKED_DIR": "data/chunked",
+    "TOKENIZER_PATH" : "model_data/trained_tokenizer.json",
     "MAX_SEQ_LEN": 2048,
     "MIN_SEQ_LEN": 32,
     "VOCAB_SIZE": 5000,
@@ -19,12 +20,6 @@
             "file_type": "zip",
             "download_path": "data/maestro-v.3.0.0.zip",
             "extract_path": "data/maestro"
-        },
-        "lakh": {
-            "url": "http://hog.ee.columbia.edu/craffel/lmd/lmd_full.tar.gz",
-            "file_type": "tar.gz",
-            "download_path": "data/lmd_full.tar.gz",
-            "extract_path": "data/lakh"
         }
     }
   }

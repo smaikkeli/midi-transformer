@@ -1,0 +1,6 @@
+{
+    "MODEL_DIR": "model_data",
+
+    "INPUTS_DIR":  "generation/inputs",
+    "OUTPUTS_DIR": "generation/outputs"
+  }

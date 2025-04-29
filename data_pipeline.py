@@ -1,15 +1,22 @@
 import argparse
 
+from pathlib import Path
+
+
 from utils.config.config import Config
 from utils.dataset_manager import DatasetManager
 from utils.dataset_preprocessor import DatasetPreprocessor
 from utils.midi_processor import MIDIProcessor
 from utils.tokenizer_manager import TokenizerManager
 
+
+
+
 class Pipeline:
     """Main pipeline for dataset preparation."""
     def __init__(self, config: Config):
         self.config = config
+
         self.dataset_preprocessor = DatasetPreprocessor(config)
         self.midi_processor = MIDIProcessor(config)
         self.dataset_manager = DatasetManager(config)

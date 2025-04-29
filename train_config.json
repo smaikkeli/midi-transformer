@@ -1,11 +1,11 @@
 
 {
   "paths": {
-    "output_dir": "checkpoint/transformer_1500lakh_full_10epoch",
-    "log_dir": "logs"
+    "output_dir": "model_data/models",
+    "log_dir": "model_data/logs"
   },
   "training": {
-    "num_epochs": 20,
+    "num_epochs": 2,
     "learning_rate": 5e-5,
     "weight_decay": 0.01,
     "save_every_n_epochs": 1,
@@ -13,10 +13,10 @@
   },
   "model_name" :"transformer_xl",
   "model_params": {
-    "d_embed": 256,
-    "d_model": 256,
-    "n_layer": 6,
-    "n_head": 6,
+    "d_embed": 8,
+    "d_model": 8,
+    "n_layer": 2,
+    "n_head": 1,
     "mem_len": 256,
     "clamp_len": 0,
     "adaptive": false,

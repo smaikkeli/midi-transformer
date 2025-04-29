@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List
 from miditok import REMI, MusicTokenizer, TokenizerConfig
 from utils.config.config import Config
+from datetime import datetime
 
 class TokenizerManager:
     """Manages MIDI tokenization."""
@@ -45,9 +46,15 @@ class TokenizerManager:
             print(f"Loading existing tokenizer from {self.config.tokenizer_path}")
             return self.load_tokenizer()
 
+
         print("Creating and training new tokenizer...")
         tokenizer = self.create_tokenizer()
         tokenizer.train(vocab_size=self.config.vocab_size, files_paths=midi_paths)
+
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        parts = self.config.tokenizer_path.parts
+        self.config.tokenizer_path = Path(timestamp + "_"+ parts[0] + "/"+parts[1])
         
         tokenizer.save(self.config.tokenizer_path)
         print(f"Tokenizer saved to {self.config.tokenizer_path}")
