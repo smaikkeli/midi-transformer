@@ -209,20 +209,11 @@ def train(to_tmp):
 
     # Set paths and device
     train_config = open_json("train_config.json")
-
-
-    # searching for the timestamp
-    for folder in Path.cwd().iterdir():
-        if folder.is_dir() and "model_data" in folder.parts[-1]:
-            folder_name = folder.parts[-1]
-            timestamp = folder_name.split("_")[:2]
-            timestamp = timestamp[0]+"_" + timestamp[1] +"_"
-            break
-
-
+    
     paths = train_config["paths"]
-    output_dir = Path(timestamp +paths["output_dir"])
-    log_dir = Path(timestamp + paths["log_dir"])
+    timestamp = paths["timestamp"]
+    output_dir = Path(timestamp+"_"+paths["output_dir"])
+    log_dir = Path(timestamp+"_"+ paths["log_dir"])
 
     output_dir.mkdir(parents=True, exist_ok=True)
     logger = setup_logging(log_dir)
@@ -230,7 +221,7 @@ def train(to_tmp):
     logger.info(f"Config loaded: {train_config}")
 
 
-    device = torch.device("cpu")
+    device = torch.device("cuda")
     logger.info(f"cuda available: {torch.cuda.is_available()}")
     #device = torch.device("cpu")
     

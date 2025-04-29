@@ -1,6 +1,7 @@
 
 {
   "paths": {
+    "timestamp": "...",
     "output_dir": "model_data/models",
     "log_dir": "model_data/logs"
   },
