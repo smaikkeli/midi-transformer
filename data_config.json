@@ -3,7 +3,7 @@
     "CHUNKED_DIR": "data/chunked",
     "MAX_SEQ_LEN": 2048,
     "MIN_SEQ_LEN": 32,
-    "VOCAB_SIZE": 40000,
+    "VOCAB_SIZE": 10000,
     "TOKENIZER_CONFIG": {
         "pitch_range": [21, 109],
         "beat_res": {

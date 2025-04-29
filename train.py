@@ -6,6 +6,8 @@ import time
 import os
 import logging
 from datetime import datetime
+import argparse
+import shutil
 
 from data_pipeline import Config, TokenizerManager, DatasetPreprocessor
 from model import create_model
@@ -28,6 +30,31 @@ def setup_logging(log_dir):
     )
     return logging.getLogger(__name__)
 
+def copy_data_to_local(data_path, logger):
+    data_path = Path(data_path)
+    if not data_path.exists():
+        logger.error(f"Data path {data_path} does not exists")
+        return None
+    tmp_dir = Path("/tmp") / f"training_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    
+    logger.info(f"Copying data from {data_path} to {tmp_dir}...")
+
+    if data_path.is_dir():
+        for item in data_path.glob('*'):
+            dst = tmp_dir / item.name
+            if item.is_file():
+                shutil.copy2(item, dst)
+            elif item.is_dir():
+                shutil.copytree(item, dst)
+    else:
+        dst = tmp_dir / data_path.name
+        shutil.copy2(data_path, dst)
+        logger.info(f"Copied {data_path.name}")
+    
+    logger.info(f"Data copied successfully to {tmp_dir}")
+    return tmp_dir
+
 def open_json(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
@@ -41,7 +68,7 @@ def run_training_loop(
         weight_decay, 
         save_every_n_epochs,
         test_loader = None,
-        save_every_n_steps=None,
+        save_every_n_steps=False,
         output_dir=None,
         seed=42,
         device=None,
@@ -61,9 +88,10 @@ def run_training_loop(
     )
     
     # Create output directory if specified
-    if output_dir:
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
+    #make sure output dir exists
+    print(f'Output dir exists and is located in: {output_dir}')
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     # Initialize tracking variables
     best_val_loss = float('inf')
@@ -100,7 +128,6 @@ def run_training_loop(
             # Backward pass
             loss.backward()
             optimizer.step()
-            
             
             # Update progress bar
             train_iter.set_postfix({"loss": loss.item()})
@@ -175,7 +202,7 @@ def run_training_loop(
 
 
 # Set paths and device
-def train():
+def train(to_tmp):
     # Set paths and device
     train_config = open_json("train_config.json")
 
@@ -190,8 +217,7 @@ def train():
 
 
     device = torch.device("cuda")
-    
-    
+    logger.info(f"cuda available: {torch.cuda.is_available()}")
     #device = torch.device("cpu")
     
     logger.info(f"Using device: {device}")
@@ -201,6 +227,14 @@ def train():
 
     #Load the tokenizer from the config file
     data_config = Config.load_from_file(Path("./data_config.json"))
+    data_path = data_config.chunked_dir
+
+    if to_tmp and data_path:
+        new_data_path = copy_data_to_local(data_path, logger)
+        data_config.chunked_dir = new_data_path
+    
+    print(f"Data is loaded from {data_config.chunked_dir}")
+
     token_manager = TokenizerManager(config=data_config)
     tokenizer = token_manager.load_tokenizer()
     
@@ -213,7 +247,7 @@ def train():
     train_ratio = dataset_params.get("train_ratio", 0.9)
     val_ratio = dataset_params.get("val_ratio", 0.1)
     test_ratio = dataset_params.get("test_ratio", 0.0)
-    batch_size = dataset_params.get("batch_size", 4)
+    batch_size = dataset_params.get("batch_size", 1)
     
     # Split into train/validation sets
     train_loader, val_loader, _ = datasetpreprocessor.create_data_loaders(
@@ -245,11 +279,14 @@ def train():
     })
 
     run_training_loop(**training_params)
-    
-    
     # Save the model
     model.save_pretrained(output_dir)
     print(f"Model saved to {output_dir}")
     
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser(description="Train a model with optional data localization")
+    parser.add_argument('--data_to_tmp', action='store_true',
+                        help='Copy data to /tmp for fast triton access')
+    args = parser.parse_args()
+    train(to_tmp = args.data_to_tmp)
+
