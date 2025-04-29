@@ -35,6 +35,15 @@ class DatasetManager:
         with tarfile.open(tar_path, 'r:gz') as tar_ref:
             tar_ref.extractall(extract_to)
         print("Extraction complete.")
+
+    @staticmethod
+    def remove_dir(dir: Path) -> None:
+        if dir.exists():
+            # Use shutil.rmtree to remove directory and all its contents including subdirectories
+            shutil.rmtree(dir)
+            print(f"Removed directory {dir} and all its contents")
+        else:
+            print(f"{dir} does not exist. Nothing to remove.")
     
     def get_dataset(self, dataset_name: str, cleanup: bool = True) -> None:
         if dataset_name not in self.datasets:

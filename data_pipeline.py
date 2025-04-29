@@ -38,15 +38,28 @@ class Pipeline:
         chunk_paths = self.dataset_preprocessor.chunk_dataset(midi_paths, tokenizer)
 
         return chunk_paths
+    
+    def remove_chunks(self):
+        "Removes the current chunked files"
+        self.dataset_manager.remove_dir(self.config.chunked_dir)
+        print(f"Chunked files removed from {self.config.chunked_dir}")
 
     
 def main():
     argparser = argparse.ArgumentParser(description="MIDI Dataset Preparation Pipeline")
     
+    # Common configuration
     argparser.add_argument('--config', type=str, default="data_config.json", help="Path to configuration file")
-    argparser.add_argument('--download', action='store_true', help="Download all datasets specified in the config file")
-    argparser.add_argument('--chunk', action='store_true', help="Chunk the dataset after download")
-    argparser.add_argument('--lakh_limit', type=int, default=None, help="Limit the number of Lakh MIDI files to process")
+    
+    # Create mutually exclusive group for primary actions
+    action_group = argparser.add_mutually_exclusive_group(required=True)
+    action_group.add_argument('--download', action='store_true', help="Download all datasets specified in the config file")
+    action_group.add_argument('--chunk', action='store_true', help="Chunk the dataset after download")
+    action_group.add_argument('--remove_chunks', action='store_true', help="Remove chunked files")
+    
+    # Optional parameters for specific actions
+    chunk_options = argparser.add_argument_group('Chunking options')
+    chunk_options.add_argument('--lakh_limit', type=int, default=None, help="Limit the number of Lakh MIDI files to process")
 
     args = argparser.parse_args()
 
@@ -55,19 +68,18 @@ def main():
     pipeline = Pipeline(config)
     pipeline.setup_environment()
 
-    # Download datasets if --download is provided
-    if args.download:
+    # Execute primary action based on arguments
+    if args.remove_chunks:
+        pipeline.remove_chunks()
+        print("Chunked files have been removed.")
+    
+    elif args.download:
         pipeline.prepare_datasets(cleanup=True)
         print("All datasets have been downloaded and extracted.")
-
-    # Tokenize datasets if --tokenize is provided
-    if args.chunk:
+    
+    elif args.chunk:
         pipeline.chunk(lakh_limit=args.lakh_limit)
-        print(f"Tokenizer created and saved to {config.tokenizer_path}")
-
-    # Handle case where neither argument is provided
-    if not args.download and not args.chunk:
-        print("No action specified. Use --download to download datasets or --tokenize to tokenize them.")
+        print(f"Dataset has been chunked successfully.")
 
 
 if __name__ == "__main__":
