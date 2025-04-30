@@ -17,7 +17,7 @@ class Generator:
         self.data_config = Config.load_from_file(Path("./data_config.json"))
         self.generation_config = open_json("./generation_config.json")
         self.token_manager = TokenizerManager(config=self.data_config)
-        self.tokenizer = self.token_manager.load_tokenizer()
+        self.tokenizer = self.token_manager.load_tokenizer(Path(self.generation_config["MODEL_DIR"] + "/trained_tokenizer.json"))
 
 
         self.attention_mask = None
@@ -27,14 +27,6 @@ class Generator:
         self.model = TransfoXLLMHeadModel.from_pretrained(self.generation_config["MODEL_DIR"] + "/models/best_model")
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = self.model.to(device)
-
-        if not os.path.exists(self.generation_config["INPUTS_DIR"]):
-            os.makedirs(self.generation_config["INPUTS_DIR"])
-
-    
-        if not os.path.exists(self.generation_config["OUTPUTS_DIR"]):
-            os.makedirs(self.generation_config["OUTPUTS_DIR"])
-
 
     def extend(self,input_name, output_name, number_of_new_events):
         start_time = time.time()
@@ -71,10 +63,23 @@ def main():
     argparser.add_argument('--outname', type=str, default= "output")
     argparser.add_argument('--nevents', type=int, default=1)
 
+    argparser.add_argument('--create_folders', action='store_true')
+
     args = argparser.parse_args()
+
+   
+    if args.create_folders:
+
+        generation_config = open_json("generation_config.json")
+        if not os.path.exists(generation_config["INPUTS_DIR"]):
+            os.makedirs(generation_config["INPUTS_DIR"])
     
-    generator= Generator()
-    generator.extend(args.inname, args.outname, args.nevents)
+        if not os.path.exists(generation_config["OUTPUTS_DIR"]):
+            os.makedirs(generation_config["OUTPUTS_DIR"])
+
+    else:
+        generator= Generator()
+        generator.extend(args.inname, args.outname, args.nevents)
 
 
 

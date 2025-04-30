@@ -204,18 +204,23 @@ def run_training_loop(
 # Set paths and device
 def train(to_tmp):
 
-
-    
-
     # Set paths and device
     train_config = open_json("train_config.json")
+    data_config = Config.load_from_file(Path("./data_config.json"))
     
     paths = train_config["paths"]
-    timestamp = paths["timestamp"]
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
     output_dir = Path(timestamp+"_"+paths["output_dir"])
+    output_dir = data_config.outputs_dir/"model_data"/output_dir
+
     log_dir = Path(timestamp+"_"+ paths["log_dir"])
+    log_dir = data_config.outputs_dir/"model_data"/log_dir
 
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    
     logger = setup_logging(log_dir)
     logger.info("Training started")
     logger.info(f"Config loaded: {train_config}")
@@ -223,7 +228,7 @@ def train(to_tmp):
 
     device = torch.device("cuda")
     logger.info(f"cuda available: {torch.cuda.is_available()}")
-    #device = torch.device("cpu")
+    
     
     logger.info(f"Using device: {device}")
 
@@ -232,12 +237,15 @@ def train(to_tmp):
     logger.info("Loading tokenizer...")
 
     #Load the tokenizer from the config file
-    data_config = Config.load_from_file(Path("./data_config.json"))
+    
 
 
-    parts = data_config.tokenizer_path.parts
-    print(data_config.tokenizer_path)
-    data_config.tokenizer_path = Path(timestamp + parts[0] + "/"+parts[1])
+    data_config.tokenizer_dir = Path(train_config["paths"]["tokenizer_dir"])
+    data_config.tokenizer_dir = data_config.outputs_dir/"tokenizers"/data_config.tokenizer_dir
+
+    data_config.chunked_dir = Path(train_config["paths"]["tokenizer_dir"] + "/chunked")
+    data_config.chunked_dir = data_config.outputs_dir/"tokenizers"/data_config.chunked_dir
+
 
     data_path = data_config.chunked_dir
 
@@ -248,7 +256,7 @@ def train(to_tmp):
     print(f"Data is loaded from {data_config.chunked_dir}")
 
     token_manager = TokenizerManager(config=data_config)
-    tokenizer = token_manager.load_tokenizer()
+    tokenizer = token_manager.load_tokenizer(data_config.tokenizer_dir/"trained_tokenizer.json")
 
     
     
@@ -291,6 +299,11 @@ def train(to_tmp):
         "logger": logger,
         "output_dir": output_dir
     })
+
+    # copying the configs and the tokenizer to the model folder
+    shutil.copy2("data_config.json", output_dir.parent/"data_config.json")
+    shutil.copy2("train_config.json", output_dir.parent/"train_config.json")
+    shutil.copy2(data_config.tokenizer_dir/"trained_tokenizer.json", output_dir.parent/"trained_tokenizer.json")
 
     run_training_loop(**training_params)
     # Save the model

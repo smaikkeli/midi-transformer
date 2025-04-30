@@ -1,5 +1,5 @@
 {
-    "MODEL_DIR": "...",
+    "MODEL_DIR": "training_outputs/model_data/20250429_171815_model_data",
 
     "INPUTS_DIR":  "generation/inputs",
     "OUTPUTS_DIR": "generation/outputs"

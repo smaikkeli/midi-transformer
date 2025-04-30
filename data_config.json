@@ -1,7 +1,8 @@
 {
+    "OUTPUTS_DIR": "training_outputs",
     "DATA_DIR": "data",
-    "CHUNKED_DIR": "data/chunked",
-    "TOKENIZER_PATH" : "model_data/trained_tokenizer.json",
+    "CHUNKED_DIR": "tokenizer/chunked",
+    "TOKENIZER_DIR" : "tokenizer",
     "MAX_SEQ_LEN": 2048,
     "MIN_SEQ_LEN": 32,
     "VOCAB_SIZE": 5000,
@@ -27,6 +28,7 @@
         "download_path": "data/lmd_full.tar.gz",
         "extract_path": "data/lakh"
         }
+
     }
     
   }

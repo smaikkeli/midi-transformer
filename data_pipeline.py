@@ -44,6 +44,11 @@ class Pipeline:
 
         chunk_paths = self.dataset_preprocessor.chunk_dataset(midi_paths, tokenizer)
 
+        with open(self.config.tokenizer_dir/"specs.txt", "w") as file:
+            file.write(f"Vocabulary size : {self.config.vocab_size}\n")
+            file.write(f"Datasets : {[elt for elt in self.config.datasets.keys()]}\n")
+            file.write(f"Lakh limit  : {lakh_limit}\n")
+            file.close()
         return chunk_paths
     
     def remove_chunks(self):

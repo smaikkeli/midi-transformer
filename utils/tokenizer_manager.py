@@ -34,29 +34,41 @@ class TokenizerManager:
         t_config = TokenizerConfig(**t_config)
         return REMI(tokenizer_config=t_config)
 
-    def load_tokenizer(self) -> MusicTokenizer:
+    def load_tokenizer(self, path) -> MusicTokenizer:
         """Loads an existing tokenizer from the specified path."""
-        if not self.config.tokenizer_path.exists():
-            raise FileNotFoundError(f"Tokenizer not found at {self.config.tokenizer_path}")
+        if not path.exists():
+            raise FileNotFoundError(f"Tokenizer not found at {path}")
         
-        return REMI(params=self.config.tokenizer_path)
+        return REMI(params=path)
 
     def get_or_create_tokenizer(self, midi_paths: List[Path]) -> MusicTokenizer:
-        if self.config.tokenizer_path.exists():
-            print(f"Loading existing tokenizer from {self.config.tokenizer_path}")
-            return self.load_tokenizer()
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        parts = self.config.chunked_dir.parts
+        folder_name = timestamp +"_" + parts[0]
+        self.config.chunked_dir = Path(folder_name, *parts[1:])
+        self.config.chunked_dir = self.config.outputs_dir/"tokenizers"/self.config.chunked_dir
+
+        parts = self.config.tokenizer_dir.parts
+        folder_name = timestamp +"_" + parts[0]
+        self.config.tokenizer_dir = Path(folder_name, *parts[1:])
+        self.config.tokenizer_dir = self.config.outputs_dir/"tokenizers"/self.config.tokenizer_dir
+
+
+        if (self.config.tokenizer_dir/"trained_tokenizer.json").exists():
+            print(f"Loading existing tokenizer from {self.config.tokenizer_dir}")
+            return self.load_tokenizer(self.config.tokenizer_dir/"trained_tokenizer.json")
 
 
         print("Creating and training new tokenizer...")
         tokenizer = self.create_tokenizer()
         tokenizer.train(vocab_size=self.config.vocab_size, files_paths=midi_paths)
-
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        parts = self.config.tokenizer_path.parts
-        self.config.tokenizer_path = Path(timestamp + "_"+ parts[0] + "/"+parts[1])
         
-        tokenizer.save(self.config.tokenizer_path)
-        print(f"Tokenizer saved to {self.config.tokenizer_path}")
+
+        print(self.config.chunked_dir)
+        self.config.chunked_dir.mkdir(parents=True,exist_ok=True)   
+        tokenizer.save(self.config.tokenizer_dir/"trained_tokenizer.json")
+        print(f"Tokenizer saved to {self.config.tokenizer_dir}")
 
         return tokenizer

@@ -12,10 +12,7 @@ class DatasetPreprocessor:
     """Prepare datasets for training."""
 
     def __init__(self, config: Config):
-        self.chunked_dir = config.chunked_dir
-        self.max_seq_len = config.max_seq_len
-        self.min_seq_len = config.min_seq_len
-        self.vocab_size = config.vocab_size
+        self.config = config
 
     def chunk_dataset(self, midi_paths: List[Path], tokenizer: MusicTokenizer) -> None:
         '''
@@ -25,19 +22,19 @@ class DatasetPreprocessor:
             tokenizer : Tokenizer to use for tokenization.
         '''
 
-        if (self.chunked_dir.exists()) and (list(self.chunked_dir.rglob("*.mid*"))):
-            print(f"Chunked files already exist in {self.chunked_dir} and length is {len(list(self.chunked_dir.glob('**/*.mid*')))}")
+        if ((self.config.chunked_dir).exists()) and (list((self.config.chunked_dir).rglob("*.mid*"))):
+            print(f"Chunked files already exist in {self.config.chunked_dir} and length is {len(list(self.config.chunked_dir.glob('**/*.mid*')))}")
             return
         
         print(f"Splitting {len(midi_paths)} files into chunks...")
         chunk_paths = split_files_for_training(
             files_paths=midi_paths,
             tokenizer=tokenizer,
-            save_dir=self.chunked_dir,
-            max_seq_len=self.max_seq_len,
-            min_seq_len=self.min_seq_len
+            save_dir=self.config.chunked_dir,
+            max_seq_len=self.config.max_seq_len,
+            min_seq_len=self.config.min_seq_len
         )
-        print(f"Splitting to chunks completed. Files saved to {self.chunked_dir}")
+        print(f"Splitting to chunks completed. Files saved to {self.config.chunked_dir}")
         print(f"In total {len(chunk_paths)} chunks created.")
         return chunk_paths
 
@@ -50,13 +47,13 @@ class DatasetPreprocessor:
         '''
 
     def load_chunked_dataset(self, tokenizer: MusicTokenizer) -> DatasetMIDI:
-        chunked_files = list(self.chunked_dir.glob("**/*.midi")) + list(self.chunked_dir.glob("**/*.mid"))
+        chunked_files = list(self.config.chunked_dir.glob("**/*.midi")) + list(self.config.chunked_dir.glob("**/*.mid"))
         print(f"Loading {len(chunked_files)} MIDI chunks...")
         
         dataset = DatasetMIDI(
             files_paths=chunked_files,
             tokenizer=tokenizer,
-            max_seq_len=self.max_seq_len,
+            max_seq_len=self.config.max_seq_len,
             bos_token_id=tokenizer["BOS_None"],
             eos_token_id=tokenizer["EOS_None"],
             #pre_tokenize=True

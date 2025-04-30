@@ -1,7 +1,7 @@
 
 {
   "paths": {
-    "timestamp": "...",
+    "tokenizer_dir": "20250430_125539_tokenizer",
     "output_dir": "model_data/models",
     "log_dir": "model_data/logs"
   },
