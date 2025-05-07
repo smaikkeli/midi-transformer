@@ -1,25 +1,25 @@
 
 {
   "paths": {
-    "tokenizer_dir": "20250430_125539_tokenizer",
+    "tokenizer_dir": "lakh5k_voc8k",
     "output_dir": "model_data/models",
     "log_dir": "model_data/logs"
   },
   "training": {
     "num_epochs": 20,
-    "learning_rate": 5e-5,
+    "learning_rate": 1e-4,
     "weight_decay": 0.01,
     "save_every_n_epochs": 1,
     "seed": 42
   },
   "model_name" :"transformer_xl",
   "model_params": {
-    "d_embed": 256,
+    "d_embed": 1024,
     "d_model": 256,
-    "n_layer": 6,
-    "n_head": 6,
-    "mem_len": 256,
-    "clamp_len": 0,
+    "n_layer": 8,
+    "n_head": 8,
+    "mem_len": 512,
+    "clamp_len": 1000,
     "adaptive": false,
     "cutoffs": "[]"
   },
@@ -27,6 +27,6 @@
     "train_ratio": 0.9,
     "val_ratio": 0.1,
     "test_ratio": 0.0,
-    "batch_size": 4
+    "batch_size": 1
   }
 }

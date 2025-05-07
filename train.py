@@ -68,7 +68,8 @@ def run_training_loop(
         weight_decay, 
         save_every_n_epochs,
         test_loader = None,
-        save_every_n_steps=False,
+        save_every_n_steps=10000,
+        eval_log_step=1000,
         output_dir=None,
         seed=42,
         device=None,
@@ -150,9 +151,9 @@ def run_training_loop(
         
         # Wrap loader with tqdm for progress bar
         val_iter = tqdm(val_loader, desc=f"Epoch {epoch+1}/{num_epochs} [Validation]")
-        
+    
         with torch.no_grad():
-            for batch in val_iter:
+            for batch_idx, batch in enumerate(val_iter):
                 # Move data to device
                 inputs = batch["input_ids"].to(device)
                 labels = batch["labels"].to(device)
@@ -163,14 +164,15 @@ def run_training_loop(
                 
                 # Update tracking
                 total_eval_loss += loss.item()
-                
-                # Update progress bar
+
                 val_iter.set_postfix({"loss": loss.item()})
-        
-        # Calculate average validation loss
-        avg_eval_loss = total_eval_loss / len(val_loader)
-        logger.info(f"Epoch {epoch+1}/{num_epochs} - Validation Loss: {avg_eval_loss:.4f}")
-        
+
+                # Calculate average validation loss
+                if eval_log_step and batch_idx % eval_log_step == 0:
+                    # Update progress bar
+                    avg_eval_loss = total_eval_loss / len(val_loader)
+                    logger.info(f"Epoch {epoch+1}/{num_epochs} - Validation Loss: {avg_eval_loss:.4f}")
+                
         # Save the model every n epochs
         if (epoch + 1) % save_every_n_epochs == 0:
             epoch_dir = output_dir / f"epoch_{epoch+1}"
@@ -202,11 +204,11 @@ def run_training_loop(
 
 
 # Set paths and device
-def train(to_tmp):
+def train(to_tmp, train_config_path, data_config_path):
 
     # Set paths and device
-    train_config = open_json("train_config.json")
-    data_config = Config.load_from_file(Path("./data_config.json"))
+    train_config = open_json(train_config_path)
+    data_config = Config.load_from_file(Path(data_config_path))
     
     paths = train_config["paths"]
 
@@ -232,14 +234,9 @@ def train(to_tmp):
     
     logger.info(f"Using device: {device}")
 
-
-    # Load the tokenizer
     logger.info("Loading tokenizer...")
 
     #Load the tokenizer from the config file
-    
-
-
     data_config.tokenizer_dir = Path(train_config["paths"]["tokenizer_dir"])
     data_config.tokenizer_dir = data_config.outputs_dir/"tokenizers"/data_config.tokenizer_dir
 
@@ -258,9 +255,6 @@ def train(to_tmp):
     token_manager = TokenizerManager(config=data_config)
     tokenizer = token_manager.load_tokenizer(data_config.tokenizer_dir/"trained_tokenizer.json")
 
-    
-    
-    # Load the dataset
     logger.info("Loading dataset...")
     datasetpreprocessor = DatasetPreprocessor(config=data_config)
     dataset = datasetpreprocessor.load_chunked_dataset(tokenizer = tokenizer)
@@ -270,8 +264,7 @@ def train(to_tmp):
     val_ratio = dataset_params.get("val_ratio", 0.1)
     test_ratio = dataset_params.get("test_ratio", 0.0)
     batch_size = dataset_params.get("batch_size", 1)
-    
-    # Split into train/validation sets
+
     train_loader, val_loader, _ = datasetpreprocessor.create_data_loaders(
         dataset = dataset, tokenizer = tokenizer, batch_size=batch_size, train_ratio=train_ratio, val_ratio=val_ratio
     )
@@ -301,8 +294,8 @@ def train(to_tmp):
     })
 
     # copying the configs and the tokenizer to the model folder
-    shutil.copy2("data_config.json", output_dir.parent/"data_config.json")
-    shutil.copy2("train_config.json", output_dir.parent/"train_config.json")
+    shutil.copy2(data_config_path, output_dir.parent/data_config_path)
+    shutil.copy2(train_config_path, output_dir.parent/train_config_path)
     shutil.copy2(data_config.tokenizer_dir/"trained_tokenizer.json", output_dir.parent/"trained_tokenizer.json")
 
     run_training_loop(**training_params)
@@ -314,6 +307,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a model with optional data localization")
     parser.add_argument('--data_to_tmp', action='store_true',
                         help='Copy data to /tmp for fast triton access')
+    parser.add_argument('--train_config', type=str, help="Path to training configuration file")
+    parser.add_argument('--data_config', type=str, help="Path to the data&tokenizer config")
     args = parser.parse_args()
-    train(to_tmp = args.data_to_tmp)
+    train(to_tmp = args.data_to_tmp, train_config_path = args.train_config, data_config_path = args.data_config)
 
